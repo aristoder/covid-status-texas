@@ -20,7 +20,9 @@ class data_covid:
         self.new_test = new_test
 
 class classOfdata:
+    """This class is a pair of list to hold list of data and corresponding data"""
     def __init__(self, date, data, name = None):
+        """Initialization function to add all the required data fields."""
         self.date = date
         self.data = data
         if name != None:
