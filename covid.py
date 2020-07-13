@@ -29,23 +29,25 @@ class classOfdata:
             self.name = name
 
     def average(self, day_period = 1):
+        """This function returns moving average of data of class. The period of data is assumed as 1"""
         data = []
         # place the algorithm here
         length = len(self.data)
         for i in range(length):
-            if i < int((day_period + 1)/2):
+            if i < int((day_period + 1)/2):         # if index error from beginning portion of the lsit
                 data.append(sum(self.data[:i + int((day_period-1)/2)])/(i + int((day_period-1)/2)))
-            elif i <= length - int(day_period/2):
+            elif i <= length - int(day_period/2):   # if no index error issue
                 data.append(sum(self.data[i - int((day_period + 1)/2) : i + int((day_period-1)/2)])/day_period)
-            else:
+            else:                                   # if index error from end of the lsit
                 data.append(sum(self.data[i - int((day_period + 1)/2):])/(length - i + int((day_period+1)/2)))
         return classOfdata(date= self.date, data= data, name= self.name)
 
 
 def update_db(file_link, file_name):
+    """Downloads the data from "file_link" and saves it as "file_name" with .xlsx irrespective of whether it was present in the file name argument."""
     print("Updating", file_name, "...", end = '')
     import urllib.request
-    if file_name[-5:] == ".xlsx":
+    if file_name[-5:] == ".xlsx":                   # adds .xlsx if not present
         pass
     else:
         file_name = file_name + ".xlsx"
@@ -56,19 +58,22 @@ def update_db(file_link, file_name):
     print("\nFile updated!")
 
 def clear():
+    """Clears the screen independent of OS"""
     import platform
     import os
     if platform.system().lower() == 'windows':
         os.system("cls")
-    else:
+    else:                                           # if linux, unix or anything else
         os.system("clear")
 
 def read_db(filename):
+    """Opens the file name "filename" and assuming that the file is in correct format, returns the file with adjusted offsets."""
     import pandas
-    pos = 0
     try:
         data = pandas.read_excel(filename, sheet_name = 'Trends')
-    except:
+    # add a case if any random file is given
+    except:                                         # for file: case_data_county_filename, fat_data_county_filename, cumulative_tests_data_county_filename
+        correct_index_col = 0
         for i in range(2):
             data = pandas.read_excel(filename, header = 0, index_col=i, skiprows=2)
             try:
@@ -76,11 +81,10 @@ def read_db(filename):
             except KeyError:
                 continue
             else:
-                pos = i
-                # print(i)
+                correct_index_col = i
                 break
         for i in range(3):
-            data = pandas.read_excel(filename, header = 0, index_col=pos, skiprows=i)
+            data = pandas.read_excel(filename, header = 0, index_col=correct_index_col, skiprows=i)
             try:
                 int(data[data.columns[0]][data.index[0]])
             except ValueError:
@@ -88,54 +92,52 @@ def read_db(filename):
             else:
                 break
         return data
-    else:
+    else:                                           # for file: general_data_filename
         for i in range(10):
             data = pandas.read_excel(filename, sheet_name = 'Trends', header = i)
             if 'Date' in data.columns:
                 return data
 
 def isitcityname(text):
+    """Tests if the passed string is a cityname. This is checked by the assumption that most city names are one word only.\nNote that Corpus Christi is an exception."""
     try:
         t = len(text.split())
-    except:
+    except:                                         # catch-all exception
         return False
     else:
-        if t != 1:
+        if t != 1:                                  # if one word
             return False
-        else:
+        else:                                       # if more than one word
             return True
 
 def data_decode(*data, city = False):
-    # print("Decoding data.....")
-    try:
+    """Reads the decoded excel files and returns the data in class data_covid format.\nThis takes care of both file data representation format types."""
+    try:                                            # decides if format1 or format2
         data[0][data[0].columns[0]]['Anderson']
-    except:
+    except:                                         # for file: general_data_filename decoded data
         date = []
         cum_cases = []
         cum_fat = []
         daily_new_cases = []
         daily_new_fat = []
-        for i in range(len(data[0]['Date'])):
+        for i in range(len(data[0]['Date'])):       # for each date
             try:
-                str(data[0]["Date"][i].date())
+                str(data[0]["Date"][i].date())      # if not correnlty formatted entry or any other error
             except AttributeError:
                 pass
-            else:
+            else:                                   # data verified, append to list
                 date.append(data[0]["Date"][i])
                 cum_cases.append(data[0]["Cumulative\nCases"][i])
                 cum_fat.append(data[0]["Cumulative\nFatalities"][i])
                 daily_new_cases.append(data[0]["Daily\nNew\nCases"][i])
                 daily_new_fat.append(data[0]["Daily\nNew\nFatalities"][i])
-        # return data_covid(date, cum_cases, cum_fat, daily_new_cases, daily_new_fat)
         return data_covid(name="Texas", \
         cum_cases= classOfdata(name = "Cumulative Cases", data= cum_cases, date = date),\
         cum_fat= classOfdata(name= "Cumulative Fatalities", data= cum_fat, date= date),\
         daily_new_cases= classOfdata(name= "Daily new cases", data= daily_new_cases, date= date),\
         daily_new_fat= classOfdata(name= "Daily new fatalities", data= daily_new_fat, date= date),)
-    else:  
+    else:                                           # for all other files
         import datetime
-        # returndata = []
-
         # file #0 = cumulative case
         # file #1 = cumulative fatalities
         # file #2 = cumulative tests
@@ -145,144 +147,145 @@ def data_decode(*data, city = False):
         daily_fat = classOfdata(name= "New fatalities", date= [], data= [])
         daily_tests = classOfdata(name= "New tests", date= [], data= [])
         cum_tests = classOfdata(name= "Cumulative tests", date= [], data= [])
-        for current_file in range(len(data)):                                  # per file
-            # columns_size = len(data[0].columns)
-            for current_row in data[current_file].index:                  # per city
+        for current_file in range(len(data)):                       # per file
+            for current_row in data[current_file].index:            # per city
                 city_name = current_row
-                if isitcityname(city_name):                                    # valid city name
+                if isitcityname(city_name):                         # valid city name
                     pass
                 else:
                     continue
-                if city:
-                    if city_name.lower() != city.lower():
+                if city:                                            # if for a specific city
+                    if city_name.lower() != city.lower():           # proceed only if city name matches to the argument
                         continue
+                # creates empty lists
                 date_list_fromcurrentfile = []
                 data_list_fromcurrentfile = []
-                for current_column in data[current_file].columns:              # per date
+                for current_column in data[current_file].columns:   # per date
                     try:
-                        current_date = getdate(current_column)                 # valid date
-                    except ValueError:
+                        current_date = getdate(current_column)
+                    except ValueError:                              # invalid date
                         continue
                     else:
-                        if current_date == -1:
+                        if current_date == -1:                      # invalid date                 
                             continue
-                        try:
+                        try:                                        # valid date
                             idata = int(data[current_file][current_column][current_row])
-                        except ValueError:
+                        except ValueError:                          # invalid data
                             continue
-                        else:
+                        else:                                       # valid date, add the data to list
                             data_list_fromcurrentfile.append(idata)
                             date_list_fromcurrentfile.append(current_date)
-                if current_file == 0:
+                if current_file == 0:                               # file = cumulative cases
                     cum_cases.data = data_list_fromcurrentfile
                     cum_cases.date = date_list_fromcurrentfile
                     daily_cases.date = date_list_fromcurrentfile
-                    for i in range(len(cum_cases.data)):
+                    for i in range(len(cum_cases.data)):            # produces data for daily cases
                         if i == 0:
                             daily_cases.data.append(cum_cases.data[i])
                         else:
                             daily_cases.data.append(cum_cases.data[i] - cum_cases.data[i-1])
-                elif current_file == 1:
+                elif current_file == 1:                             # file = cumilative fatalities
                     cum_fat.data = data_list_fromcurrentfile
                     cum_fat.date = date_list_fromcurrentfile
                     daily_fat.date = date_list_fromcurrentfile
-                    for i in range(len(cum_fat.data)):
+                    for i in range(len(cum_fat.data)):              # produces data for daily fatalities
                         if i == 0:
                             daily_fat.data.append(cum_fat.data[i])
                         else:
                             daily_fat.data.append(cum_fat.data[i] - cum_fat.data[i-1])
-                elif current_file == 2:
+                elif current_file == 2:                             # file = cumulative test
                     cum_tests.data = data_list_fromcurrentfile
                     cum_tests.date = date_list_fromcurrentfile
                     daily_tests.date = date_list_fromcurrentfile
-                    for i in range(len(cum_tests.data)):
+                    for i in range(len(cum_tests.data)):            # produce data for daily tests
                         if i == 0:
                             daily_tests.data.append(cum_tests.data[i])
                         else:
                             daily_tests.data.append(cum_tests.data[i] - cum_tests.data[i-1])
-        if len(daily_cases.data) == 0:
+        if len(daily_cases.data) == 0:                              # if no data found (if city name does not match or all invalid data)
             return -1
         return data_covid(cum_cases=cum_cases, cum_fat= cum_fat, daily_new_cases= daily_cases, daily_new_fat= daily_fat, cum_tests= cum_tests, new_test= daily_tests, name = city)
 
 def getdate(_input, year = 2020):
+    """Extracts month and date and return datetime object"""
+    from datetime import date
     returndata = ()
-    i = 0
     try:                                            # catch-all exception case
         _input = str(_input)
     except:
         return returndata
-    _range = [n for n in range(len(_input))]
-    while i in _range:
-        if True:
-            try:
+    i = 0
+    _range = [n for n in range(len(_input))]        # to substitute "for i in range(len(_input))" and facilitate in jumping iterations
+    while i in _range:                              # starts looking from the end of the list
+        try:                                        # look for two digit number
+            if i == 0:                              # to avoid indexError
+                t = int(_input[-2:])
+            else:
+                t = int(_input[-2 + (-1*i):-1*i])
+        except ValueError:                          # no number at this point
+            try:                                    # look for one digit number
                 if i == 0:
-                    t = int(_input[-2:])
+                    t = int(_input[-1:])
                 else:
-                    t = int(_input[-2 + (-1*i):-1*i])
+                    t = int(_input[-1 + (-1*i):-1*i])
             except ValueError:
-                try:
-                    if i == 0:
-                        t = int(_input[-1:])
-                    else:
-                        t = int(_input[-1 + (-1*i):-1*i])
-                except ValueError:
-                    i = i + 1
-                else:
-                    if t > 0:
-                        returndata = (t,) + returndata
-                        i = i + 1
-                    else:
-                        i = i + 1
-                continue
+                i = i + 1                           # updation of iteration
             else:
                 if t > 0:
-                    returndata = (t,) + returndata
-                    i = i + 2
-                    # print(i)
+                    returndata = (t,) + returndata  # found single digit number
+                    i = i + 1                       # updation of iteration
                 else:
-                    i = i + 1
-    if len(returndata) == 2:
+                    i = i + 1                       # updation of iteration
+            continue
+        else:                                       # found two digit number
+            if t > 0:                               # valid find
+                returndata = (t,) + returndata      # updation of return data
+                i = i + 2                           # skip tens digit of the found number to avoid second find of the same number
+            else:
+                i = i + 1                           # updation of iteration
+    if len(returndata) == 2:                        # found both month and date
         pass
-    elif len(returndata) == 1:
+    elif len(returndata) == 1:                      # look for month in text format
         monthlist = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
         monthabbrlist = ["jan", "feb", "mar", "apr", "may", "june", "july", "aug", "sept", "oct", "nov", "dec"]
         word = _input.split()
         for i in range(len(word)):
             try:
-                index = monthlist.index(word[i].lower())
+                index = monthlist.index(word[i].lower())            # look for month written in full
             except ValueError:
                 try:
-                    index = monthabbrlist.index(word[i].lower())
+                    index = monthabbrlist.index(word[i].lower())    # look for month written in abbrevated form
                 except ValueError:
-                    continue
+                    continue                                        # no hit
                 else:
-                    returndata = (index + 1,) + returndata
+                    returndata = (index + 1,) + returndata          # adding month to returndata
                     break
             else:
-                returndata = (index + 1,) + returndata
+                returndata = (index + 1,) + returndata              # adding month to returndata
                 break
         else:
-            return - 1
+            return - 1                                              # no hit
     else:
-        return -1
-    from datetime import date
+        return -1                                                   # no hit
     return date(year = year, month = returndata[0], day = returndata[1])
 
 def takesingleinput(outputint = True):
+    """Reads input from keyboard without echoing on screen. Returns as integer if outputint = True (Default), else returns as string."""
     from getkey import getkey
     input_ = getkey()
     if outputint == True:
         try:
-            input_ = int(input_)
+            input_ = int(input_)                    # changed the output to int
         except ValueError:
             return -1
     return input_
 
 def plot(_data, depth = 0):
+    """Takes in data (assuming in classOfdata class format), and plots the last "depth" number of points."""
+    from matplotlib import pyplot
     if _data == None:
         input("There has been an error! No such data found!")
         return
-    from matplotlib import pyplot
     pyplot.plot(_data.date, _data.data)
     if depth == 0:
         pyplot.suptitle(_data.name)
@@ -292,13 +295,14 @@ def plot(_data, depth = 0):
     pyplot.show()
 
 def end_menu(data):
-    clear()    # import os
+    """Menu of options for displaying the data."""
     from datetime import date
-    inp = menu_function("View total data", "View relative data")
-    if inp == 1:            # fixes so that depth of data becomes infinite
+    clear()
+    inp = menu_function("View total data", "View relative data")    # pre-menu menu
+    if inp == 1:            # if depth of data becomes infinite
         depth = 0
     else:                   # reads the depth of data desired
-        while True:
+        while True:         # loops to validate depth
             try:
                 depth = int(input("\nEnter the depth of data "))
             except ValueError:
@@ -306,10 +310,10 @@ def end_menu(data):
             else:
                 break
     while True:
+        from getkey import getkey
         clear()
         menu_options = ["View graph of new cases", "View graph of new fatalities", "View graph of cumulative cases", "View graph of cumulative fatalities", "Total cases", "Total fatalities", "New cases in last 24 hours", "New fatalities in last 24 hours", "New cases - 14 days moving average", "Custom moving average", "Go back", "Exit"]
         inp = menu_function(*menu_options)
-        from getkey import getkey
         if inp == menu_options.index("View graph of new cases") + 1:
             plot(data.daily_new_cases, depth= depth)
         elif inp == menu_options.index("View graph of new fatalities") + 1:
@@ -333,11 +337,12 @@ def end_menu(data):
         elif inp == menu_options.index("New cases - 14 days moving average") + 1:
             plot(data.daily_new_cases.average(day_period= 14), depth = depth)
         elif inp == menu_options.index("Custom moving average") + 1:
+            # custom moving average menu
             clear()
             print("Choose data:")
             custom_data_choice = menu_function("Daily new cases", "Cumulative cases", "Daily new fatalities", "Cumulative new fatalities", "Daily new tests", "Cumulative tests", _clear= False)
             average_width = 14
-            while True:
+            while True:                 # loop to validate average sample width
                 try:
                     average_width = int(input("Enter the sample width for moving average: "))
                 except ValueError:
@@ -375,12 +380,13 @@ def end_menu(data):
         clear()
 
 def menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city = None):
-    if city == None:
-        while True:
+    """Menu to select a city."""
+    if city == None:                    # if no city name provided
+        while True:                     # loop to validate city name
             clear()
             city_name = input("Enter the name of the city: ")
             data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= city_name)
-            if data_county == -1:
+            if data_county == -1:       # invalid city name or no such data found
                 print("City name not found.")
                 print("Press \"Enter\" to exit, any other key to try again")
                 t = takesingleinput(False)
@@ -388,12 +394,13 @@ def menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, x
                     return
             else:
                 break
-    else:
+    else:                               # city name provided in the argument
         data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= city)
-    repeat = end_menu(data_county)
+    repeat = end_menu(data_county)      # calling end_menu with the correctly loaded data
     return repeat
 
 def menu(data_texas, xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county):
+    """Menu to select state or city."""
     clear()
     repeat = 0
     while True:
@@ -404,44 +411,45 @@ def menu(data_texas, xceldata_cumulative_case_county, xceldata_cumulative_fat_co
             repeat = menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= "Dallas")
         elif t == 3:
             repeat = menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county)
-        elif t == 4:
+        elif t == 4:                                # exits
             return
-        if repeat != True:
+        if repeat != True:                          # exits (triggered if passed by other menus)
             return repeat
 
 def menu_function(*args, takeanyinput = False, _clear = True):
+    """Simple menu function to display the passed strings as menu options and return the correct choosen answer."""
     if _clear:
         clear()
     t = 0
     numberofoptions = len(args)
-    if numberofoptions > 9:
+    if numberofoptions > 9:                 # not triggered in recursive calls
         start = 0
         end = 8
         count = 0
         while True:
-            if end < numberofoptions - 1:
+            if end < numberofoptions - 1:   # need to display "More" as an menu option
                 response = menu_function(*args[start:end], "More", takeanyinput= takeanyinput)
-                if response == 9:
+                if response == 9:           # if "More" pressed
                     start = start + 8
                     end = end + 8
                     count = count + 1
-                else:
+                else:                       # base case
                     return response + (count*8)
-            elif (end + 1) == numberofoptions:
-                response = menu_function(*args[start:end + 1], takeanyinput= takeanyinput)
+            elif (end + 1) == numberofoptions:# 9th option is the last option
+                response = menu_function(*args[start:numberofoptions], takeanyinput= takeanyinput)
                 return response + (count*8)
-            else: 
+            else:                           # no 9th option needed
                 response = menu_function(*args[start:end], takeanyinput= takeanyinput)
                 return response + (count*8)
-    else:
-        for i in range(numberofoptions):
+    else:                                   # basic call for no need to display "More"
+        for i in range(numberofoptions):    # displaying options
             print(i + 1, '. ', args[i], sep='')
         if takeanyinput:
             t = takesingleinput(outputint=False)
         else:
             while True:
                 t = takesingleinput()
-                if (t > 0) and (t <= len(args)):
+                if (t > 0) and (t <= len(args)):# checking for valid response
                     break
         return t
 
