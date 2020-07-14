@@ -98,8 +98,8 @@ def read_db(filename):
             if 'Date' in data.columns:
                 return data
 
-def isitcityname(text):
-    """Tests if the passed string is a cityname. This is checked by the assumption that most city names are one word only.\nNote that Corpus Christi is an exception."""
+def isitcountyname(text):
+    """Tests if the passed string is a countyname. This is checked by the assumption that most county names are one word only.\nNote that Corpus Christi is an exception."""
     try:
         t = len(text.split())
     except:                                         # catch-all exception
@@ -110,7 +110,7 @@ def isitcityname(text):
         else:                                       # if more than one word
             return True
 
-def data_decode(*data, city = False):
+def data_decode(*data, county = False):
     """Reads the decoded excel files and returns the data in class data_covid format.\nThis takes care of both file data representation format types."""
     try:                                            # decides if format1 or format2
         data[0][data[0].columns[0]]['Anderson']
@@ -126,7 +126,7 @@ def data_decode(*data, city = False):
             except AttributeError:
                 pass
             else:                                   # data verified, append to list
-                date.append(data[0]["Date"][i])
+                date.append(data[0]["Date"][i].date())
                 cum_cases.append(data[0]["Cumulative\nCases"][i])
                 cum_fat.append(data[0]["Cumulative\nFatalities"][i])
                 daily_new_cases.append(data[0]["Daily\nNew\nCases"][i])
@@ -148,14 +148,14 @@ def data_decode(*data, city = False):
         daily_tests = classOfdata(name= "New tests", date= [], data= [])
         cum_tests = classOfdata(name= "Cumulative tests", date= [], data= [])
         for current_file in range(len(data)):                       # per file
-            for current_row in data[current_file].index:            # per city
-                city_name = current_row
-                if isitcityname(city_name):                         # valid city name
+            for current_row in data[current_file].index:            # per county
+                county_name = current_row
+                if isitcountyname(county_name):                         # valid county name
                     pass
                 else:
                     continue
-                if city:                                            # if for a specific city
-                    if city_name.lower() != city.lower():           # proceed only if city name matches to the argument
+                if county:                                            # if for a specific county
+                    if county_name.lower() != county.lower():           # proceed only if county name matches to the argument
                         continue
                 # creates empty lists
                 date_list_fromcurrentfile = []
@@ -202,9 +202,9 @@ def data_decode(*data, city = False):
                             daily_tests.data.append(cum_tests.data[i])
                         else:
                             daily_tests.data.append(cum_tests.data[i] - cum_tests.data[i-1])
-        if len(daily_cases.data) == 0:                              # if no data found (if city name does not match or all invalid data)
+        if len(daily_cases.data) == 0:                              # if no data found (if county name does not match or all invalid data)
             return -1
-        return data_covid(cum_cases=cum_cases, cum_fat= cum_fat, daily_new_cases= daily_cases, daily_new_fat= daily_fat, cum_tests= cum_tests, new_test= daily_tests, name = city)
+        return data_covid(cum_cases=cum_cases, cum_fat= cum_fat, daily_new_cases= daily_cases, daily_new_fat= daily_fat, cum_tests= cum_tests, new_test= daily_tests, name = county)
 
 def getdate(_input, year = 2020):
     """Extracts month and date and return datetime object"""
@@ -280,7 +280,7 @@ def takesingleinput(outputint = True):
             return -1
     return input_
 
-def plot(_data, depth = 0):
+def plot(_data, placeName, depth = 0):
     """Takes in data (assuming in classOfdata class format), and plots the last "depth" number of points."""
     from matplotlib import pyplot
     if _data == None:
@@ -288,9 +288,9 @@ def plot(_data, depth = 0):
         return
     pyplot.plot(_data.date, _data.data)
     if depth == 0:
-        pyplot.suptitle(_data.name)
+        pyplot.suptitle(_data.name + " in " + placeName)
     else:
-        pyplot.suptitle(_data.name + " in past " + str(depth) + " days")
+        pyplot.suptitle(_data.name + " in past " + str(depth) + " days" + " in " + placeName)
     pyplot.ylabel(_data.name)
     pyplot.show()
 
@@ -315,13 +315,13 @@ def end_menu(data):
         menu_options = ["View graph of new cases", "View graph of new fatalities", "View graph of cumulative cases", "View graph of cumulative fatalities", "Total cases", "Total fatalities", "New cases in last 24 hours", "New fatalities in last 24 hours", "New cases - 14 days moving average", "Custom moving average", "Go back", "Exit"]
         inp = menu_function(*menu_options)
         if inp == menu_options.index("View graph of new cases") + 1:
-            plot(data.daily_new_cases, depth= depth)
+            plot(data.daily_new_cases, depth= depth, placeName= data.name)
         elif inp == menu_options.index("View graph of new fatalities") + 1:
-            plot(data.daily_new_fat, depth = depth)
+            plot(data.daily_new_fat, depth = depth, placeName= data.name)
         elif inp == menu_options.index("View graph of cumulative cases") + 1:
-            plot(data.cum_cases, depth = depth)
+            plot(data.cum_cases, depth = depth, placeName= data.name)
         elif inp == menu_options.index("View graph of cumulative fatalities") + 1:
-            plot(data.cum_fat, depth = depth)
+            plot(data.cum_fat, depth = depth, placeName= data.name)
         elif inp == menu_options.index("Total cases") + 1:
             print("Total cases in ", data.name, ": ", data.cum_cases.data[-1], sep= "")
             getkey()
@@ -329,13 +329,13 @@ def end_menu(data):
             print("Total fatalities in ", data.name, ": ",data.cum_fat.data[-1], sep= "")
             getkey()
         elif inp == menu_options.index("New cases in last 24 hours") + 1:
-            print("New cases in", data.name, "on", data.daily_new_cases.date[-1].day, ":", int(data.daily_new_cases.data[-1]))
+            print("New cases in", data.name, date_relation(data.daily_new_cases.date[-1]), ":", int(data.daily_new_cases.data[-1]))
             getkey()
         elif inp == menu_options.index("New fatalities in last 24 hours") + 1:
-            print("New fatalities in", data.name, "on", data.daily_new_fat.date[-1].day, ":", int(data.daily_new_fat.data[-1]))
+            print("New fatalities in", data.name, date_relation(data.daily_new_fat.date[-1]), ":", int(data.daily_new_fat.data[-1]))
             getkey()
         elif inp == menu_options.index("New cases - 14 days moving average") + 1:
-            plot(data.daily_new_cases.average(day_period= 14), depth = depth)
+            plot(data.daily_new_cases.average(day_period= 14), depth = depth, placeName= data.name)
         elif inp == menu_options.index("Custom moving average") + 1:
             # custom moving average menu
             clear()
@@ -353,23 +353,23 @@ def end_menu(data):
                     else:
                         "Please enter a value greater than 1"                
             if custom_data_choice == 1:
-                plot(data.daily_new_cases.average(average_width), depth= depth)
+                plot(data.daily_new_cases.average(average_width), depth= depth, placeName= data.name)
             elif custom_data_choice == 2:
-                plot(data.cum_cases.average(average_width), depth= depth)
+                plot(data.cum_cases.average(average_width), depth= depth, placeName= data.name)
             elif custom_data_choice == 3:
-                plot(data.daily_new_fat.average(average_width), depth= depth)
+                plot(data.daily_new_fat.average(average_width), depth= depth, placeName= data.name)
             elif custom_data_choice == 4:
-                plot(data.cum_fat.average(average_width), depth= depth)
+                plot(data.cum_fat.average(average_width), depth= depth, placeName= data.name)
             elif custom_data_choice == 5:
                 if data.name.lower() == "texas":
                     input("This data is not available right now!")
                     continue
-                plot(data.new_test.average(average_width), depth= depth)
+                plot(data.new_test.average(average_width), depth= depth, placeName= data.name)
             elif custom_data_choice == 6:
                 if data.name.lower() == "texas":
                     input("This data is not available right now!")
                     continue
-                plot(data.cum_test.average(average_width), depth= depth)
+                plot(data.cum_test.average(average_width), depth= depth, placeName= data.name)
         elif inp == menu_options.index("Go back") + 1:
             return True
         elif inp == menu_options.index("Exit") + 1:
@@ -379,38 +379,49 @@ def end_menu(data):
             quit()
         clear()
 
-def menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city = None):
-    """Menu to select a city."""
-    if city == None:                    # if no city name provided
-        while True:                     # loop to validate city name
+def date_relation(_input):
+    from datetime import date
+    today = date.today()
+    diff =  str(today - _input).split()[0]
+    if diff == "0:00:00":
+        return "Today"
+    elif diff == '1':
+        return "Yesterday"
+    else:
+        return "on " + str(_input)[-5:-3] + " - " + str(_input)[-2:]
+
+def menu_county(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, county = None):
+    """Menu to select a county."""
+    if county == None:                    # if no county name provided
+        while True:                     # loop to validate county name
             clear()
-            city_name = input("Enter the name of the city: ")
-            data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= city_name)
-            if data_county == -1:       # invalid city name or no such data found
-                print("City name not found.")
+            county_name = input("Enter the name of the county: ")
+            data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, county= county_name)
+            if data_county == -1:       # invalid county name or no such data found
+                print("county name not found.")
                 print("Press \"Enter\" to exit, any other key to try again")
                 t = takesingleinput(False)
                 if t == "\n":
                     return
             else:
                 break
-    else:                               # city name provided in the argument
-        data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= city)
+    else:                               # county name provided in the argument
+        data_county = data_decode(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, county= county)
     repeat = end_menu(data_county)      # calling end_menu with the correctly loaded data
     return repeat
 
 def menu(data_texas, xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county):
-    """Menu to select state or city."""
+    """Menu to select state or county."""
     clear()
     repeat = 0
     while True:
-        t = menu_function("Texas", "Dallas", "Any other city", "Exit")
+        t = menu_function("Texas", "Dallas", "Any other county", "Exit")
         if t == 1:
             repeat = end_menu(data_texas)
         elif t == 2:
-            repeat = menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, city= "Dallas")
+            repeat = menu_county(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county, county= "Dallas")
         elif t == 3:
-            repeat = menu_city(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county)
+            repeat = menu_county(xceldata_cumulative_case_county, xceldata_cumulative_fat_county, xceldata_cumulative_tests_county)
         elif t == 4:                                # exits
             return
         if repeat != True:                          # exits (triggered if passed by other menus)

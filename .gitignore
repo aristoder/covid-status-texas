@@ -1,3 +1,7 @@
 *.xlsx
 *.json
+<<<<<<< HEAD
 *.pyc
+=======
+*.pyc
+>>>>>>> ec98e8dea196efd96c9d29e54f87408c2919c8fa
