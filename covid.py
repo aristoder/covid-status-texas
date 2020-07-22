@@ -122,7 +122,10 @@ def data_decode(*data, county = False):
         daily_new_fat = []
         for i in range(len(data[0]['Date'])):       # for each date
             try:
-                str(data[0]["Date"][i].date())      # if not correnlty formatted entry or any other error
+                temp = str(data[0]["Date"][i].date())      # if not correnlty formatted entry or any other error
+                if temp == "NaT":
+                    continue
+                del(temp)
             except AttributeError:
                 pass
             else:                                   # data verified, append to list
