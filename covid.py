@@ -309,7 +309,7 @@ def returnlastvaliddata(arg, daily = False):
                 index=index-1
             else:
                 break
-    return arg[index], index
+    return int(arg[index]), index
 
 def end_menu(data):
     """Menu of options for displaying the data."""
@@ -331,6 +331,7 @@ def end_menu(data):
         clear()
         menu_options = ["View graph of new cases", "View graph of new fatalities", "View graph of cumulative cases", "View graph of cumulative fatalities", "Total cases", "Total fatalities", "New cases in last 24 hours", "New fatalities in last 24 hours", "New cases - 14 days moving average", "Custom moving average", "Go back", "Exit"]
         inp = menu_function(*menu_options)
+        clear()
         if inp == menu_options.index("View graph of new cases") + 1:
             plot(data.daily_new_cases, depth= depth, placeName= data.name)
         elif inp == menu_options.index("View graph of new fatalities") + 1:
@@ -359,7 +360,6 @@ def end_menu(data):
             plot(data.daily_new_cases.average(day_period= 14), depth = depth, placeName= data.name)
         elif inp == menu_options.index("Custom moving average") + 1:
             # custom moving average menu
-            clear()
             print("Choose data:")
             custom_data_choice = menu_function("Daily new cases", "Cumulative cases", "Daily new fatalities", "Cumulative new fatalities", "Daily new tests", "Cumulative tests", _clear= False)
             average_width = 14
