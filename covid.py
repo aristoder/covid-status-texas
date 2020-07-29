@@ -133,7 +133,7 @@ def data_decode(*data, county = False):
                 cum_cases.append(data[0]["Cumulative\nCases"][i])
                 cum_fat.append(data[0]["Cumulative\nFatalities"][i])
                 daily_new_cases.append(data[0]["Daily\nNew\nCases"][i])
-                daily_new_fat.append(data[0]["Daily\nNew\nFatalities"][i])
+                daily_new_fat.append(data[0]["Fatalities\nby Date\nof Death"][i])
         return data_covid(name="Texas", \
         cum_cases= classOfdata(name = "Cumulative Cases", data= cum_cases, date = date),\
         cum_fat= classOfdata(name= "Cumulative Fatalities", data= cum_fat, date= date),\
@@ -297,6 +297,20 @@ def plot(_data, placeName, depth = 0):
     pyplot.ylabel(_data.name)
     pyplot.show()
 
+def returnlastvaliddata(arg, daily = False):   
+    index=-1 
+    if daily:
+        if arg[index] == ".":
+            return 0, index
+    else:
+        index = -1
+        while True:
+            if arg[index] == ".":
+                index=index-1
+            else:
+                break
+    return arg[index], index
+
 def end_menu(data):
     """Menu of options for displaying the data."""
     from datetime import date
@@ -326,16 +340,20 @@ def end_menu(data):
         elif inp == menu_options.index("View graph of cumulative fatalities") + 1:
             plot(data.cum_fat, depth = depth, placeName= data.name)
         elif inp == menu_options.index("Total cases") + 1:
-            print("Total cases in ", data.name, ": ", data.cum_cases.data[-1], sep= "")
+            todisplay, index = returnlastvaliddata(data.cum_cases.data)
+            print("Total cases in ", data.name, ": ", todisplay, sep= "")
             getkey()
         elif inp == menu_options.index("Total fatalities") + 1:
-            print("Total fatalities in ", data.name, ": ",data.cum_fat.data[-1], sep= "")
+            todisplay, index = returnlastvaliddata(data.cum_fat.data)
+            print("Total fatalities in ", data.name, ": ",todisplay, sep= "")
             getkey()
         elif inp == menu_options.index("New cases in last 24 hours") + 1:
-            print("New cases in", data.name, date_relation(data.daily_new_cases.date[-1]), ":", int(data.daily_new_cases.data[-1]))
+            todisplay, index = returnlastvaliddata(data.daily_new_cases.data, daily=True)
+            print("New cases in", data.name, date_relation(data.daily_new_cases.date[index]), ":", todisplay)
             getkey()
         elif inp == menu_options.index("New fatalities in last 24 hours") + 1:
-            print("New fatalities in", data.name, date_relation(data.daily_new_fat.date[-1]), ":", int(data.daily_new_fat.data[-1]))
+            todisplay, index = returnlastvaliddata(data.daily_new_fat.data, daily=True)
+            print("New fatalities in", data.name, date_relation(data.daily_new_fat.date[index]), ":", todisplay)
             getkey()
         elif inp == menu_options.index("New cases - 14 days moving average") + 1:
             plot(data.daily_new_cases.average(day_period= 14), depth = depth, placeName= data.name)
