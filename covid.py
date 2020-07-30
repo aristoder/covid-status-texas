@@ -485,7 +485,7 @@ def menu_function(*args, takeanyinput = False, _clear = True):
                     break
         return t
 
-def reponseYes(reponse):
+def responseYes(reponse):
     if reponse.lower() in ('y', 'yes', 'ye', 'yep'):
         return True
     else:
@@ -500,7 +500,7 @@ try:
     import getkey
 except ModuleNotFoundError:
     response=input("Module getkey not found.\nDo you want to install getkey? (Internet connection required).")
-    if reponseYes(response):
+    if responseYes(response):
         installThisModule("getkey")
         try:
             import getkey
@@ -517,7 +517,7 @@ try:
     import xlrd
 except ModuleNotFoundError:
     response=input("Module xlrd not found.\nDo you want to install xlrd? (Internet connection required).")
-    if reponseYes(response):
+    if responseYes(response):
         installThisModule("xlrd")
         try:
             import xlrd
@@ -534,7 +534,7 @@ try:
     import pandas
 except ModuleNotFoundError:
     response=input("Module pandas not found.\nDo you want to install pandas? (Internet connection required).")
-    if reponseYes(response):
+    if responseYes(response):
         installThisModule("pandas")
         try:
             import pandas
@@ -551,7 +551,7 @@ try:
     import matplotlib
 except ModuleNotFoundError:
     response=input("Module matplotlib not found.\nDo you want to install matplotlib? (Internet connection required).")
-    if reponseYes(response):
+    if responseYes(response):
         installThisModule("matplotlib")
         try:
             import matplotlib
@@ -569,7 +569,7 @@ if __name__ == "__main__":
     clear()
     # accessing internet to update the local files
     t = input("Do you want to update the database from the server? ")
-    if t in ('y', 'Y', 'Yes', 'yes', 'YES'):
+    if responseYes(t):
         update_db(general_data_link, general_data_filename)
         update_db(case_data_county_link, case_data_county_filename)
         update_db(fat_data_county_link, fat_data_county_filename)
