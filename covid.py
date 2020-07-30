@@ -329,7 +329,7 @@ def end_menu(data):
     while True:
         from getkey import getkey
         clear()
-        menu_options = ["View graph of new cases", "View graph of new fatalities", "View graph of cumulative cases", "View graph of cumulative fatalities", "Total cases", "Total fatalities", "New cases in last 24 hours", "New fatalities in last 24 hours", "New cases - 14 days moving average", "Custom moving average", "Go back", "Exit"]
+        menu_options = ["View graph of new cases", "View graph of new fatalities", "View graph of cumulative cases", "View graph of cumulative fatalities", "Total cases", "Total fatalities", "New cases in last 24 hours", "New fatalities in last 24 hours", "New cases - 14 days moving average", "New cases - 2x moving average","Custom moving average", "Go back", "Exit"]
         inp = menu_function(*menu_options)
         clear()
         if inp == menu_options.index("View graph of new cases") + 1:
@@ -358,6 +358,8 @@ def end_menu(data):
             getkey()
         elif inp == menu_options.index("New cases - 14 days moving average") + 1:
             plot(data.daily_new_cases.average(day_period= 14), depth = depth, placeName= data.name)
+        elif inp == menu_options.index("New cases - 2x moving average") + 1:
+            plot(data.daily_new_cases.average(day_period= 14).average(day_period=14), depth = depth, placeName= data.name)
         elif inp == menu_options.index("Custom moving average") + 1:
             # custom moving average menu
             print("Choose data:")
