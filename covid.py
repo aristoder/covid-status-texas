@@ -92,11 +92,14 @@ def read_db(filename, format=1):
         if fileinfofound:
             data = pandas.read_excel(filename, header=info["header"], index_col=info["index_col"], skiprows=info["skiprows"])
             try:
-                int(data[data.columns[1]]["Dallas"])
+                int(data[data.columns[12]]["Dallas"])
             except:
-                # print(filename)
-                # input()
-                pass
+                try:
+                    int(data[data.columns[12]]["DALLAS"])
+                except:
+                    pass
+                else:
+                    return data
             else:
                 return data
         # no correct info about file found, so searching for correct format
