@@ -66,14 +66,42 @@ def clear():
     else:                                           # if linux, unix or anything else
         os.system("clear")
 
-def read_db(filename):
+def read_db(filename, format=1):
     """Opens the file name "filename" and assuming that the file is in correct format, returns the file with adjusted offsets."""
     import pandas
+    import json
+    fileinfofilename=filename + ".info"
+    fileinfofound = False
+    info=0
     try:
-        data = pandas.read_excel(filename, sheet_name = 'Trends')
-    # add a case if any random file is given
-    except:                                         # for file: case_data_county_filename, fat_data_county_filename, cumulative_tests_data_county_filename
+        openfile = open(fileinfofilename, "r")
+    except FileNotFoundError:
+        pass
+    else:
+        fileinfofound=True
+        info=json.load(openfile)
+        try:
+            if info["filename"]==filename:
+                pass
+            else:
+                fileinfofound=False
+        except:
+            fileinfofound=True
+        openfile.close
+    if format == 1:                                 # for file: case_data_county_filename, fat_data_county_filename, cumulative_tests_data_county_filename
+        if fileinfofound:
+            data = pandas.read_excel(filename, header=info["header"], index_col=info["index_col"], skiprows=info["skiprows"])
+            try:
+                int(data[data.columns[1]]["Dallas"])
+            except:
+                # print(filename)
+                # input()
+                pass
+            else:
+                return data
+        # no correct info about file found, so searching for correct format
         correct_index_col = 0
+        correct_skip_rows=0
         for i in range(2):
             data = pandas.read_excel(filename, header = 0, index_col=i, skiprows=2)
             try:
@@ -90,12 +118,24 @@ def read_db(filename):
             except ValueError:
                 pass
             else:
+                correct_skip_rows=i
                 break
+        openfile=open(fileinfofilename, "w")
+        json.dump({"filename":filename, "header":0, "index_col": correct_index_col, "skiprows": correct_skip_rows}, openfile)
+        openfile.close()
         return data
     else:                                           # for file: general_data_filename
+        if fileinfofound:
+            data = pandas.read_excel(filename, sheet_name=info["sheet_name"], header=info["header"])
+            if 'Date' in data.columns:
+                return data        
+        # no correct info about file found, so searching for correct format
         for i in range(10):
             data = pandas.read_excel(filename, sheet_name = 'Trends', header = i)
             if 'Date' in data.columns:
+                openfile=open(fileinfofilename, "w")
+                json.dump({"filename": filename, "header": i, "sheet_name": 'Trends'}, openfile)
+                openfile.close()
                 return data
 
 def isitcountyname(text):
@@ -579,10 +619,10 @@ if __name__ == "__main__":
     # reading files into memory
     clear()
     print("Reading files....")
-    xceldata_texas = read_db(general_data_filename)
-    xceldata_cumulative_case_county = read_db(case_data_county_filename)
-    xceldata_cumulative_fat_county = read_db(fat_data_county_filename)
-    xceldata_cumulative_tests_county = read_db(cumulative_tests_data_county_filename)
+    xceldata_texas = read_db(general_data_filename, format=0)
+    xceldata_cumulative_case_county = read_db(case_data_county_filename, format=1)
+    xceldata_cumulative_fat_county = read_db(fat_data_county_filename, format=1)
+    xceldata_cumulative_tests_county = read_db(cumulative_tests_data_county_filename, format=1)
     # decoding and menu calling
     data_texas = data_decode(xceldata_texas)
     del(xceldata_texas)
