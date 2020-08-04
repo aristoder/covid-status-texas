@@ -208,7 +208,7 @@ def data_decode(*data, county = False):
                 data_list_fromcurrentfile = []
                 for current_column in data[current_file].columns:   # per date
                     try:
-                        current_date = getdate(current_column)
+                        current_date = getdate(str(current_column))
                     except ValueError:                              # invalid date
                         continue
                     else:
@@ -217,7 +217,10 @@ def data_decode(*data, county = False):
                         try:                                        # valid date
                             idata = int(data[current_file][current_column][current_row])
                         except ValueError:                          # invalid data
-                            continue
+                            if data[current_file][current_column][current_row] == ".":
+                                idata = 0
+                            else:
+                                continue
                         else:                                       # valid date, add the data to list
                             data_list_fromcurrentfile.append(idata)
                             date_list_fromcurrentfile.append(current_date)
@@ -252,68 +255,95 @@ def data_decode(*data, county = False):
             return -1
         return data_covid(cum_cases=cum_cases, cum_fat= cum_fat, daily_new_cases= daily_cases, daily_new_fat= daily_fat, cum_tests= cum_tests, new_test= daily_tests, name = county)
 
-def getdate(_input, year = 2020):
+def neg(number):
+    try:
+        int(number)
+    except:
+        return None
+    else:
+        return -1*number
+
+def c_int(number):
+    startingpoint = 0
+    for i in range(len(number)):
+        if number[i] == "0":
+            startingpoint+=1
+        elif number[i] == " " or number[i] == "-":
+            raise ValueError
+        else:
+            break
+    else:
+        return int(number)    
+    return int(number[startingpoint:])
+
+def breakintonumber(arg):
+    index = 0
+    _range = [n for n in range(len(arg))]                        # to substitute "for i in range(len(arg))" and facilitate in jumping iterations
+    result=()
+    try:                                            # catch-all exception case
+        arg = str(arg)
+    except:
+        raise ValueError
+    while index in _range:                                          # starts looking from the end of the list
+        extracted=None
+        for numberofdigits in range(1,len(arg)):
+            possible=None
+            tobechecked=None
+            if index == 0:
+                tobechecked=arg[neg(index+numberofdigits):]
+            else:
+                tobechecked=arg[neg(index+numberofdigits):neg(index)]
+            try:
+                possible=c_int(tobechecked)
+            except ValueError:
+                break
+            else:
+                extracted=possible
+        if extracted == None:
+            index+=1
+            continue
+        else:
+            result=extracted,*result
+            index += numberofdigits
+    return result
+
+def getdate(text, year = 2020):
     """Extracts month and date and return datetime object"""
     from datetime import date
-    returndata = ()
-    try:                                            # catch-all exception case
-        _input = str(_input)
-    except:
-        return returndata
-    i = 0
-    _range = [n for n in range(len(_input))]        # to substitute "for i in range(len(_input))" and facilitate in jumping iterations
-    while i in _range:                              # starts looking from the end of the list
-        try:                                        # look for two digit number
-            if i == 0:                              # to avoid indexError
-                t = int(_input[-2:])
-            else:
-                t = int(_input[-2 + (-1*i):-1*i])
-        except ValueError:                          # no number at this point
-            try:                                    # look for one digit number
-                if i == 0:
-                    t = int(_input[-1:])
-                else:
-                    t = int(_input[-1 + (-1*i):-1*i])
-            except ValueError:
-                i = i + 1                           # updation of iteration
-            else:
-                if t > 0:
-                    returndata = (t,) + returndata  # found single digit number
-                    i = i + 1                       # updation of iteration
-                else:
-                    i = i + 1                       # updation of iteration
-            continue
-        else:                                       # found two digit number
-            if t > 0:                               # valid find
-                returndata = (t,) + returndata      # updation of return data
-                i = i + 2                           # skip tens digit of the found number to avoid second find of the same number
-            else:
-                i = i + 1                           # updation of iteration
-    if len(returndata) == 2:                        # found both month and date
+    returndata = {"Date": 0, "Month": 0, "Year": year}
+    numbers=breakintonumber(text)
+    for i in range(len(numbers)-1):
+        if numbers[i] > 0 and numbers[i] < 13 and numbers[i+1] > 0 and numbers[i+1] < 32:
+            returndata["Month"]=numbers[i]
+            returndata["Date"]=numbers[i+1]
+            break
+    if returndata["Month"] != 0:                                    # found both month and date
         pass
-    elif len(returndata) == 1:                      # look for month in text format
+    else:
+        for i in range(len(numbers)):
+            if numbers[i] > 0 and numbers[i] < 32:
+                returndata["Date"]=numbers[i]
+                break
         monthlist = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
         monthabbrlist = ["jan", "feb", "mar", "apr", "may", "june", "july", "aug", "sept", "oct", "nov", "dec"]
-        word = _input.split()
-        for i in range(len(word)):
+        words = text.split()
+        for i in range(len(words)):
             try:
-                index = monthlist.index(word[i].lower())            # look for month written in full
+                index = monthlist.index(words[i].lower())            # look for month written in full
             except ValueError:
                 try:
-                    index = monthabbrlist.index(word[i].lower())    # look for month written in abbrevated form
+                    index = monthabbrlist.index(words[i].lower())    # look for month written in abbrevated form
                 except ValueError:
                     continue                                        # no hit
                 else:
-                    returndata = (index + 1,) + returndata          # adding month to returndata
+                    returndata["Month"] = index + 1                 # adding month to returndata
                     break
             else:
-                returndata = (index + 1,) + returndata              # adding month to returndata
+                returndata["Month"] = index + 1                     # adding month to returndata
                 break
         else:
             return - 1                                              # no hit
-    else:
-        return -1                                                   # no hit
-    return date(year = year, month = returndata[0], day = returndata[1])
+    return date(year = year, month = returndata["Month"], day = returndata["Date"])
 
 def takesingleinput(outputint = True):
     """Reads input from keyboard without echoing on screen. Returns as integer if outputint = True (Default), else returns as string."""
