@@ -67,7 +67,7 @@ def read_db(filename, format=1):
             data = pandas.read_excel(filename, header = 0, index_col=correct_index_col, skiprows=i)
             try:
                 int(data[data.columns[0]][data.index[0]])
-            except ValueError:
+            except:
                 pass
             else:
                 correct_skip_rows=i
