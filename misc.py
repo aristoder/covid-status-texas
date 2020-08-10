@@ -128,7 +128,7 @@ def plot(_data, placeName, depth = 0):
     if _data == None:
         input("There has been an error! No such data found!")
         return
-    pyplot.plot(_data.date, _data.data)
+    pyplot.plot(_data.date[depth*-1:], _data.data[depth*-1:])
     if depth == 0:
         pyplot.suptitle(_data.name + " in " + placeName)
     else:
