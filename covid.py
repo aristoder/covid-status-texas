@@ -12,6 +12,7 @@ from menufunctions import menu
 from misc import clear, responseYes, installThisModule
 
 if __name__ == "__main__":
+    print('\33]0;COVID\a', end='', flush=True)
     try:
         clear()
         # accessing internet to update the local files
